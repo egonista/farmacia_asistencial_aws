@@ -4,6 +4,7 @@ Sistema de Gestión y Simulación Asistencial para Farmacia de APS.
 Autores: Egon Muñoz Muttel y Renato Suazo Burgos - INACAP 2026
 """
 import os
+from datetime import timedelta
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -99,6 +100,7 @@ if DB_ENGINE == 'postgresql':
             'PASSWORD': os.environ.get('DB_PASSWORD', ''),
             'HOST': os.environ.get('DB_HOST', 'localhost'),
             'PORT': os.environ.get('DB_PORT', '5432'),
+            'OPTIONS': {'sslmode': os.environ.get('DB_SSLMODE', 'require')},
         }
     }
 else:
@@ -149,6 +151,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # --- REST Framework ---
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
@@ -178,8 +181,6 @@ CSRF_FAILURE_VIEW = 'core.error_views.csrf_failure'
 # --- Cifrado simétrico (Fernet/AES) para datos sensibles - Ley 21.719 ---
 FERNET_KEY = os.environ.get('FERNET_KEY', 'FF4L3jxoeRGOG8AUMaRVygz9XemP2QQVoRcoRLwZpIs=')
 
-# --- CORS ---
-CORS_ALLOW_ALL_ORIGINS = True  # Solo desarrollo
 
 # --- Simulación Docente: Selector rápido de 1 clic ---
 # False (recomendado): solo el Administrador real autenticado puede usar /simular-rol/ (403 a otros roles).
@@ -187,3 +188,39 @@ CORS_ALLOW_ALL_ORIGINS = True  # Solo desarrollo
 MODO_SIMULACION_DOCENTE = os.environ.get('MODO_SIMULACION_DOCENTE', 'False').lower() in ('true', '1', 'yes')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# --- Configuración JWT ---
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}
+
+# --- CORS (Configurable por entorno) ---
+CORS_ALLOW_ALL_ORIGINS = os.environ.get('CORS_ALLOW_ALL_ORIGINS', 'False').lower() in ('true', '1', 'yes')
+CORS_ALLOWED_ORIGINS = [
+    o.strip() for o in os.environ.get('CORS_ALLOWED_ORIGINS', 'http://54.226.59.192').split(',') if o.strip()
+]
+
+# --- Almacenamiento de estáticos y media en Amazon S3 ---
+USE_S3 = os.environ.get('USE_S3', 'False').lower() in ('true', '1', 'yes')
+if USE_S3:
+    AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME', 'cesfam-farmacia-static-egon-2026')
+    AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME', 'us-east-1')
+    AWS_S3_SIGNATURE_VERSION = 's3v4'
+    AWS_DEFAULT_ACL = None
+    AWS_QUERYSTRING_AUTH = True
+    STORAGES = {
+        'default': {
+            'BACKEND': 'storages.backends.s3.S3Storage',
+            'OPTIONS': {
+                'location': 'media',
+            },
+        },
+        'staticfiles': {
+            'BACKEND': 'storages.backends.s3.S3Storage',
+            'OPTIONS': {
+                'location': 'static',
+            },
+        },
+    }
