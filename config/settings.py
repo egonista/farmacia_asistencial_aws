@@ -179,7 +179,7 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 CSRF_FAILURE_VIEW = 'core.error_views.csrf_failure'
 
 # --- Cifrado simétrico (Fernet/AES) para datos sensibles - Ley 21.719 ---
-FERNET_KEY = os.environ.get('FERNET_KEY', 'FF4L3jxoeRGOG8AUMaRVygz9XemP2QQVoRcoRLwZpIs=')
+FERNET_KEY = os.environ.get('FERNET_KEY', '')
 
 
 # --- Simulación Docente: Selector rápido de 1 clic ---
@@ -199,7 +199,7 @@ SIMPLE_JWT = {
 # --- CORS (Configurable por entorno) ---
 CORS_ALLOW_ALL_ORIGINS = os.environ.get('CORS_ALLOW_ALL_ORIGINS', 'False').lower() in ('true', '1', 'yes')
 CORS_ALLOWED_ORIGINS = [
-    o.strip() for o in os.environ.get('CORS_ALLOWED_ORIGINS', 'http://54.226.59.192').split(',') if o.strip()
+    o.strip() for o in os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',') if o.strip()
 ]
 
 # --- Almacenamiento de estáticos y media en Amazon S3 ---
